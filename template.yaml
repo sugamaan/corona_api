@@ -8,37 +8,104 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 5
+    Timeout: 20
+    Environment:
+      Variables:
+        REGION: !Ref REGION
+        ENV: !Ref ENV
+        TZ: !Ref TZ
+        DB_CONNECTION_SETTING: !Ref DbConnectionSetting
+
+Parameters:
+  ENV:
+    Type: String
+  REGION:
+    Type: String
+  TZ:
+    Type: String
+  DbConnectionSetting:
+    Type: String
 
 Resources:
-  HelloWorldFunction:
+  GetPatientDetailsFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello-world/
-      Handler: hello-world
+      CodeUri: functions/get-patient-details/
+      Handler: main
       Runtime: go1.x
       Architectures:
         - x86_64
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonRDSFullAccess
       Events:
         CatchAll:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Path: /patient/details/
             Method: GET
-      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
-        Variables:
-          PARAM1: VALUE
-
+  UpdatePatientDetailsStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: step_functions/update_patient_details.json
+      DefinitionSubstitutions:
+        UploadPatientDetailsFileToS3Function: !GetAtt UploadPatientDetailsFileToS3Function.Arn
+      Role: !GetAtt UpdatePatientDetailsStateMachineRole.Arn
+  UpdatePatientDetailsStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+  UploadPatientDetailsFileToS3Function:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: functions/upload-patient-details-file-to-s3/
+      Handler: main
+      Runtime: go1.x
+      Architectures:
+        - x86_64
+  UpdatePatientDetailsTableFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: functions/update-patient-details-table/
+      Timeout: 600
+      Handler: main
+      Runtime: go1.x
+      Architectures:
+        - x86_64
+  NotifyExecutionOfPatientDetailsScheduleFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: functions/notify-execution-of-patient-details-schedule/
+      Handler: main
+      Runtime: go1.x
+      Architectures:
+        - x86_64
+      Policies:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldAPI:
+  GetPatientDetailsAPI:
     Description: "API Gateway endpoint URL for Prod environment for First Function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/patient/details/"
+  GetPatientDetailsFunction:
     Description: "First Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
+    Value: !GetAtt GetPatientDetailsFunction.Arn
+  GetPatientDetailsFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+    Value: !GetAtt GetPatientDetailsFunctionRole.Arn

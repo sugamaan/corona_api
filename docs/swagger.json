@@ -1,0 +1,57 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/patients/details/": {
+            "get": {
+                "description": "指定した期間と都道府県の感染者数情報を取得する",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Patients"
+                ],
+                "summary": "感染者数詳細リスト取得",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "example": 20230101,
+                        "description": "開始日",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "example": 20230102,
+                        "description": "終了日",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"北海道\"",
+                        "description": "都道府県名",
+                        "name": "area",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        }
+    }
+}
