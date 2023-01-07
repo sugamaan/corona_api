@@ -1,13 +1,13 @@
 package main
 
 import (
+	"corona-api/src/middleware"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"hello-world/src/middleware"
 	"io"
 	"log"
 	"os"

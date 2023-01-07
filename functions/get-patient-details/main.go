@@ -1,39 +1,25 @@
 package main
 
 import (
-	"encoding/json"
+	"corona-api/src/middleware"
+	"corona-api/src/modules/common"
+	"corona-api/src/modules/date"
+	"corona-api/src/modules/patient"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"hello-world/src/middleware"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
-	"time"
 )
 
 const (
-	BadRequestMessage  = "リクエストパラメータが不正です"
-	AvailableStartDate = 20200509
+	StartDateOfCountingPatientDetails = 20200509
 )
-
-type ErrorResponse struct {
-	ErrorMessage string `json:"errorMessage"`
-	HttpStatus   int    `json:"httpStatus"`
-}
 
 type PatientDetailParams struct {
 	area      string
 	startDate uint32
 	endDate   uint32
-}
-
-type PatientDetail struct {
-	Date    uint32
-	Area    string
-	Value   uint32
-	Country string
 }
 
 func getParams(request events.APIGatewayProxyRequest) (PatientDetailParams, error) {
@@ -55,18 +41,12 @@ func getParams(request events.APIGatewayProxyRequest) (PatientDetailParams, erro
 		return PatientDetailParams{}, fmt.Errorf("strconv.Atoi(endDate): endDate: %v, %v", endDate, err)
 	}
 
-	jst, err := time.LoadLocation(os.Getenv("TZ"))
+	todayInt, err := date.GetToday()
 	if err != nil {
-		return PatientDetailParams{}, fmt.Errorf("time.LoadLocation error: %v", err)
-	}
-	now := time.Now().In(jst)
-	today := now.Format("20060102")
-	todayInt, err := strconv.Atoi(today)
-	if err != nil {
-		return PatientDetailParams{}, fmt.Errorf("strconv.Atoi(today): today: %v, %v", todayInt, err)
+		return PatientDetailParams{}, fmt.Errorf("date.GetToday(): todayInt: %v, %v", todayInt, err)
 	}
 
-	if startDateInt > endDateInt || startDateInt < AvailableStartDate || startDateInt >= todayInt || endDateInt < AvailableStartDate || endDateInt >= todayInt {
+	if startDateInt > endDateInt || startDateInt < StartDateOfCountingPatientDetails || startDateInt >= todayInt || endDateInt < StartDateOfCountingPatientDetails || endDateInt >= todayInt {
 		return PatientDetailParams{}, fmt.Errorf("invalid specified period: startDateInt: %v, endDateInt: %v", startDate, endDate)
 	}
 
@@ -88,94 +68,31 @@ func getParams(request events.APIGatewayProxyRequest) (PatientDetailParams, erro
 // @Success 200
 // @failure 400
 // @failure 500
-// @router /patients/details/ [get]
+// @router /patient/details/ [get]
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	// クエリパラメーター取得
 	patientDetailParams, err := getParams(request)
 	if err != nil {
-		// ロギング
-		log.Println(err)
-
-		// カスタムレスポンス
-		res := &ErrorResponse{
-			ErrorMessage: BadRequestMessage,
-			HttpStatus:   http.StatusBadRequest,
-		}
-		body, err := json.Marshal(res)
-		if err != nil {
-			log.Println(err)
-		}
-		return events.APIGatewayProxyResponse{
-			Body:       string(body),
-			StatusCode: http.StatusBadRequest,
-		}, err
+		return common.APIGatewayProxyErrorResponse(err, common.BadRequestMessage, http.StatusBadRequest)
 	}
 
 	// DB接続
 	db, err := middleware.ConnectDb()
 	defer db.Close()
 	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Ping()
-	if err != nil {
-		log.Println(err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: 500,
-		}, err
+		return common.APIGatewayProxyErrorResponse(err, common.InternalServerErrorMessage, http.StatusInternalServerError)
 	}
 
 	// SQL作成
-	rows, err := db.Query("SELECT  date, area, value, country FROM patient_details WHERE area = ? AND date BETWEEN ? AND ?", patientDetailParams.area, patientDetailParams.startDate, patientDetailParams.endDate)
+	patientDetails, err := patient.GetPatientDetailsByPeriodAndArea(db, patientDetailParams.area, patientDetailParams.startDate, patientDetailParams.endDate)
 	if err != nil {
-		log.Println(err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: 500,
-		}, err
+		return common.APIGatewayProxyErrorResponse(err, common.InternalServerErrorMessage, http.StatusInternalServerError)
 	}
-	defer rows.Close()
 
-	var patientDetails []PatientDetail
-	for rows.Next() {
-		var patientDetail PatientDetail
-		err := rows.Scan(&patientDetail.Date, &patientDetail.Area, &patientDetail.Value, &patientDetail.Country)
-		if err != nil {
-			log.Fatal(err)
-		}
-		patientDetails = append(patientDetails, patientDetail)
-	}
-	err = rows.Err()
+	// レスポンス作成
+	bytes, err := patient.GeneratePatientDetailsResponse(patientDetails)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	// レスポンスの形に整形
-	body := map[string]interface{}{}
-
-	// エリア
-	body["area"] = patientDetails[0].Area
-
-	// 日付データを作成
-	for _, pd := range patientDetails {
-		dateString := strconv.Itoa(int(pd.Date))
-		body[dateString] = pd.Value
-	}
-
-	// 合計データを作成
-	var sum uint32
-	for _, pd := range patientDetails {
-		sum += pd.Value
-	}
-	body["sum"] = sum
-
-	// 平均データを作成
-	average := int(sum) / len(patientDetails)
-	body["average"] = average
-
-	// JSONにして返却
-	bytes, err := json.Marshal(body)
-	if err != nil {
-		fmt.Println("JSON marshal error: ", err)
+		return common.APIGatewayProxyErrorResponse(err, common.InternalServerErrorMessage, http.StatusInternalServerError)
 	}
 
 	return events.APIGatewayProxyResponse{

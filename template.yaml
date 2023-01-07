@@ -102,7 +102,7 @@ Outputs:
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   GetPatientDetailsAPI:
     Description: "API Gateway endpoint URL for Prod environment for First Function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/patient/details/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/patient/details/"
   GetPatientDetailsFunction:
     Description: "First Lambda Function ARN"
     Value: !GetAtt GetPatientDetailsFunction.Arn

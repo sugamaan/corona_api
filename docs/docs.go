@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/patients/details/": {
+        "/patient/details/": {
             "get": {
                 "description": "指定した期間と都道府県の感染者数情報を取得する",
                 "consumes": [
