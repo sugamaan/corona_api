@@ -1,11 +1,22 @@
+host: localhost:8081
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server celler server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
 paths:
-  /patients/details/:
+  /patient/details/:
     get:
       consumes:
       - application/json
-      description: 指定した期間と都道府県の感染者数情報を取得する
+      description: 2020/05/09から前日までの指定都道府県の感染者数情報を取得する
       parameters:
       - description: 開始日
         example: 20230101

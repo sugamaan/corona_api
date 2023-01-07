@@ -6,8 +6,6 @@ services:
     build:
       dockerfile: ./Dockerfile.local
     tty: true
-#    env_file:
-#      - ./environments/local.env
     ports:
       - "8001:8001"
     volumes:
@@ -22,6 +20,5 @@ services:
       MYSQL_ROOT_PASSWORD: 'password'
     ports:
       - 23306:3306
-networks:
-  corona-api-network:
-    external: true
+
+

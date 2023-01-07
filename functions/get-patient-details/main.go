@@ -83,7 +83,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		return common.APIGatewayProxyErrorResponse(err, common.InternalServerErrorMessage, http.StatusInternalServerError)
 	}
 
-	// SQL作成
+	// SQLでデータを取得
 	patientDetails, err := patient.GetPatientDetailsByPeriodAndArea(db, patientDetailParams.area, patientDetailParams.startDate, patientDetailParams.endDate)
 	if err != nil {
 		return common.APIGatewayProxyErrorResponse(err, common.InternalServerErrorMessage, http.StatusInternalServerError)

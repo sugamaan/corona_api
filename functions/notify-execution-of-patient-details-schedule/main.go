@@ -30,6 +30,7 @@ func handler() {
 	if err != nil {
 		panic(err)
 	}
+
 	// slackへ通知
 	hookUrl := *res.Parameter.Value
 	message, err := json.Marshal(payload{

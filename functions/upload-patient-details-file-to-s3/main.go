@@ -26,7 +26,7 @@ type Response struct {
 }
 
 func handler() (Response, error) {
-	// httpリクエストでレスポンスを取得
+	// 外部APIからJSONファイルを取得
 	c := resty.New()
 	res, err := c.SetRetryCount(3).
 		SetRetryWaitTime(5 * time.Second).
@@ -36,10 +36,11 @@ func handler() (Response, error) {
 		}).
 		R().
 		Get(Covid19JapanAllURL)
+
 	file := res.Body()
 	reader := bytes.NewReader(file)
 
-	// 取得した情報をS3へ保存
+	// 取得したファイルをS3へ保存
 	sess, err := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{Region: aws.String(os.Getenv("REGION"))},
 	})
@@ -59,6 +60,7 @@ func handler() (Response, error) {
 	now := time.Now().In(jst)
 	objectKey := now.Format(S3ObjectKeyTimeFormat)
 
+	// S3へアップロード
 	upload := s3manager.NewUploader(sess)
 	_, err = upload.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(patientDetailsFileBucketName),
