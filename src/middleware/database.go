@@ -8,6 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/rs/zerolog"
+	sqldblogger "github.com/simukti/sqldb-logger"
+	"github.com/simukti/sqldb-logger/logadapter/zerologadapter"
 	"log"
 	"os"
 )
@@ -54,8 +57,8 @@ func ConnectDb() (*sql.DB, error) {
 	}
 
 	// SQLのクエリログを取得
-	//loggerAdapter := zerologadapter.New(zerolog.New(os.Stdout))
-	//db = sqldblogger.OpenDriver(dbConfig, db.Driver(), loggerAdapter)
+	loggerAdapter := zerologadapter.New(zerolog.New(os.Stdout))
+	db = sqldblogger.OpenDriver(dbConfig, db.Driver(), loggerAdapter)
 
 	return db, nil
 }

@@ -133,62 +133,60 @@ func TestGetPatientDetailsByPeriodAndArea(t *testing.T) {
 	}
 }
 
-//
-//func Test_createArea(t *testing.T) {
-//	type args struct {
-//		patientDetails []Detail
-//		body           map[string]interface{}
-//	}
-//	tests := []struct {
-//		name    string
-//		args    args
-//		want    map[string]interface{}
-//		wantErr assert.ErrorAssertionFunc
-//	}{
-//		{
-//			name: "normal",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Date: 202301, Area: "北海道"},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want:    map[string]interface{}{"area": "北海道"},
-//			wantErr: assert.NoError,
-//		},
-//		{
-//			name: "area is empty",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Date: 202301, Area: ""},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want:    map[string]interface{}{},
-//			wantErr: assert.Error,
-//		},
-//		{
-//			name: "area is zero value",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Date: 202301},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want:    map[string]interface{}{},
-//			wantErr: assert.Error,
-//		},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			got, err := createArea(tt.args.patientDetails)
-//			if !tt.wantErr(t, err, fmt.Sprintf("createArea(%v, %v)", tt.args.patientDetails, tt.args.body)) {
-//				return
-//			}
-//			assert.Equalf(t, tt.want, got, "createArea(%v, %v)", tt.args.patientDetails, tt.args.body)
-//		})
-//	}
-//}
+func Test_createArea(t *testing.T) {
+	type args struct {
+		patientDetails []Detail
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "normal",
+			args: args{
+				patientDetails: []Detail{
+					{Date: 202301, Area: "北海道"},
+				},
+			},
+			want:    "北海道",
+			wantErr: assert.NoError,
+		},
+		{
+			name: "area is empty",
+			args: args{
+				patientDetails: []Detail{
+					{Date: 202301, Area: ""},
+				},
+			},
+			want:    "",
+			wantErr: assert.Error,
+		},
+		{
+			name: "area is zero value",
+			args: args{
+				patientDetails: []Detail{
+					{Date: 202301},
+				},
+			},
+			want:    "",
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := createArea(tt.args.patientDetails)
+			if !tt.wantErr(t, err, fmt.Sprintf("createArea(%v)", tt.args.patientDetails)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "createArea(%v)", tt.args.patientDetails)
+		})
+	}
+}
+
 //
 //func Test_createDate(t *testing.T) {
 //	type args struct {

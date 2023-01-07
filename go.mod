@@ -9,14 +9,17 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/goccy/go-json v0.10.0 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/rs/zerolog v1.28.0
+	github.com/simukti/sqldb-logger v0.0.0-20220521163925-faf2f2be0eb6
+	github.com/simukti/sqldb-logger/logadapter/zerologadapter v0.0.0-20220521163925-faf2f2be0eb6
 	github.com/stretchr/testify v1.8.1
-	github.com/swaggo/files v1.0.0 // indirect
+	github.com/swaggo/files v1.0.0
 	github.com/swaggo/gin-swagger v1.5.3
 	github.com/swaggo/swag v1.8.9
 	github.com/ugorji/go/codec v1.2.8 // indirect
-	github.com/urfave/cli/v2 v2.23.7 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/tools v0.5.0 // indirect
 )
