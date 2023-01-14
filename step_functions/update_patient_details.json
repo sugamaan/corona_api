@@ -1,0 +1,129 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Upload patient details file to s3",
+  "States": {
+    "Upload patient details file to s3": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:ap-northeast-1:542123847447:function:corona-api-UploadPatientDetailsFileToS3Function-QqY5juTLrv0M:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 1,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Upload completed",
+      "OutputPath": "$.Payload"
+    },
+    "Upload completed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Status",
+          "NumericEquals": 1,
+          "Next": "Update patient details table"
+        }
+      ],
+      "Default": "Notify upload failure"
+    },
+    "Notify upload failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:ap-northeast-1:542123847447:function:corona-api-NotifyExecutionOfPatientDetailsSchedule-NzTegMKepx2B:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 1,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Upload failure"
+    },
+    "Update patient details table": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:ap-northeast-1:542123847447:function:corona-api-UpdatePatientDetailsTableFunction-RbHErYsrcU4z:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 1,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Update completed"
+    },
+    "Update completed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.Status",
+          "NumericEquals": 1,
+          "Next": "Success"
+        }
+      ],
+      "Default": "Notify update failure"
+    },
+    "Success": {
+      "Type": "Succeed"
+    },
+    "Notify update failure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:ap-northeast-1:542123847447:function:corona-api-NotifyExecutionOfPatientDetailsSchedule-NzTegMKepx2B:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Update failure"
+    },
+    "Update failure": {
+      "Type": "Fail"
+    },
+    "Upload failure": {
+      "Type": "Fail"
+    }
+  }
+}

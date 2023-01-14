@@ -1,0 +1,22 @@
+FROM golang:1.19-alpine
+
+# package update
+RUN apk update && apk add git
+
+WORKDIR /usr/src/app
+
+# pre-copy/cache go.mod for pre-downloading dependencies and only redownloading them in subsequent builds if they change
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
+
+# copy source
+COPY . .
+RUN go build -o /usr/local/bin/app
+
+# module install
+RUN go mod tidy
+RUN go install github.com/cosmtrek/air@v1.29.0
+RUN go install github.com/joho/godotenv/cmd/godotenv@latest
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+CMD ["air", "-c", ".air.toml"]

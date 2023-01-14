@@ -1,0 +1,20 @@
+version = 0.1
+[default]
+
+# start-api
+[default.local_start_api.parameters]
+parameter_overrides = "ENV=local REGION=ap-northeast-1 TZ=Asia/Tokyo DbConnectionSetting=local-database"
+
+# local invoke
+[default.local_invoke.parameters]
+parameter_overrides = "ENV=local REGION=ap-northeast-1 TZ=Asia/Tokyo DbConnectionSetting=local-database"
+
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "corona-api"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-12vzxarch0r9b"
+s3_prefix = "corona-api"
+region = "ap-northeast-1"
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "ENV=prod REGION=ap-northeast-1 TZ=Asia/Tokyo DbConnectionSetting=production-database"
