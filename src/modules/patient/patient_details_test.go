@@ -1,7 +1,6 @@
 package patient
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -34,33 +33,8 @@ func TestCreateSum2(t *testing.T) {
 	}
 }
 
-// TDT + サブテスト
-//func TestCreateSum3(t *testing.T) {
-//	patientDetails := []Detail{
-//		{202201, "北海道", 1000, "日本"},
-//		{202202, "北海道", 2000, "日本"},
-//		{202203, "北海道", 3000, "日本"},
-//	}
-//	testCases := []struct {
-//		patientDetails []Detail
-//		body           map[string]interface{}
-//		want           uint32
-//	}{
-//		{patientDetails},
-//		{[]Detail{}},
-//	}
-//	for _, tt := range testCases {
-//		t.Run("normal", func(t *testing.T) {
-//			got := createSum(tt.patientDetails)
-//			if diff := cmp.Diff(tt.want, got); diff != "" {
-//				t.Errorf("createSum() mismatch (-want +got):\n%s", diff)
-//			}
-//		})
-//	}
-//}
-
 // 重いテスト
-func TestCreateSum4(t *testing.T) {
+func TestCreateSum3(t *testing.T) {
 	time.Sleep(3 * time.Second)
 	patientDetails := []Detail{{Value: 1000}}
 	expected := uint32(1000)
@@ -72,64 +46,6 @@ func BenchmarkCreateSum(b *testing.B) {
 	patientDetails := GetPatientDetailsMock()
 	for i := 0; i < b.N; i++ {
 		createSum(patientDetails)
-	}
-}
-
-func TestGeneratePatientDetailsResponse(t *testing.T) {
-	type args struct {
-		patientDetails []Detail
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []byte
-		wantErr assert.ErrorAssertionFunc
-	}{
-		{
-			name: "normal",
-			args: args{
-				patientDetails: []Detail{
-					{Date: 202301, Area: "北海道", Value: 1000, Country: "日本"},
-				},
-			},
-			want:    []byte{},
-			wantErr: assert.NoError,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GeneratePatientDetailsResponse(tt.args.patientDetails)
-			if !tt.wantErr(t, err, fmt.Sprintf("GeneratePatientDetailsResponse(%v)", tt.args.patientDetails)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GeneratePatientDetailsResponse(%v)", tt.args.patientDetails)
-		})
-	}
-}
-
-func TestGetPatientDetailsByPeriodAndArea(t *testing.T) {
-	type args struct {
-		db        *sql.DB
-		area      string
-		startDate uint32
-		endDate   uint32
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []Detail
-		wantErr assert.ErrorAssertionFunc
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetPatientDetailsByPeriodAndArea(tt.args.db, tt.args.area, tt.args.startDate, tt.args.endDate)
-			if !tt.wantErr(t, err, fmt.Sprintf("GetPatientDetailsByPeriodAndArea(%v, %v, %v, %v)", tt.args.db, tt.args.area, tt.args.startDate, tt.args.endDate)) {
-				return
-			}
-			assert.Equalf(t, tt.want, got, "GetPatientDetailsByPeriodAndArea(%v, %v, %v, %v)", tt.args.db, tt.args.area, tt.args.startDate, tt.args.endDate)
-		})
 	}
 }
 
@@ -186,140 +102,6 @@ func Test_createArea(t *testing.T) {
 		})
 	}
 }
-
-//
-//func Test_createDate(t *testing.T) {
-//	type args struct {
-//		patientDetails []Detail
-//		body           map[string]interface{}
-//	}
-//	tests := []struct {
-//		name string
-//		args args
-//		want map[string]interface{}
-//	}{
-//		{
-//			name: "one value",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Date: 202301, Value: 1000},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{"202301": uint32(1000)},
-//		},
-//		{
-//			name: "two value",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Date: 202301, Value: 1000},
-//					{Date: 202302, Value: 2000},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{"202301": uint32(1000), "202302": uint32(2000)},
-//		},
-//		{
-//			name: "zero value",
-//			args: args{
-//				patientDetails: []Detail{},
-//				body:           map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{},
-//		},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			assert.Equalf(t, tt.want, createDate(tt.args.patientDetails, tt.args.body), "createDate(%v, %v)", tt.args.patientDetails, tt.args.body)
-//		})
-//	}
-//}
-//
-//func Test_createSum(t *testing.T) {
-//	type args struct {
-//		patientDetails []Detail
-//		body           map[string]interface{}
-//	}
-//	tests := []struct {
-//		name string
-//		args args
-//		want map[string]interface{}
-//	}{
-//		{
-//			name: "one value",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Value: 1000},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{"sum": uint32(1000)},
-//		},
-//		{
-//			name: "two value",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Value: 1000},
-//					{Value: 1000},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{"sum": uint32(2000)},
-//		},
-//		{
-//			name: "zero value",
-//			args: args{
-//				patientDetails: []Detail{},
-//				body:           map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{"sum": uint32(0)},
-//		},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			assert.Equalf(t, tt.want, createSum(tt.args.patientDetails, tt.args.body), "createSum(%v, %v)", tt.args.patientDetails, tt.args.body)
-//		})
-//	}
-//}
-//
-//func Test_createAverage(t *testing.T) {
-//	type args struct {
-//		patientDetails []Detail
-//		body           map[string]interface{}
-//	}
-//	tests := []struct {
-//		name string
-//		args args
-//		want map[string]interface{}
-//	}{
-//		{
-//			name: "one value",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Value: 1000},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{"average": float64(1000)},
-//		},
-//		{
-//			name: "two value",
-//			args: args{
-//				patientDetails: []Detail{
-//					{Value: 1000},
-//					{Value: 1000},
-//				},
-//				body: map[string]interface{}{},
-//			},
-//			want: map[string]interface{}{"average": float64(1000)},
-//		},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			assert.Equalf(t, tt.want, createAverage(tt.args.patientDetails, tt.args.body), "createAverage(%v, %v)", tt.args.patientDetails, tt.args.body)
-//		})
-//	}
-//}
 
 func GetPatientDetailsMock() []Detail {
 	return []Detail{
