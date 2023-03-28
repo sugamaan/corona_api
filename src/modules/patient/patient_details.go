@@ -160,3 +160,39 @@ func createAverage(patientDetails []Detail) float64 {
 	}
 	return float64(sum) / float64(patientDetailsLength)
 }
+
+func InsertPatientDetails(db *sql.DB, patientDetails []Detail) error {
+	// DBトランザクション開始
+	tx, err := db.Begin()
+	defer tx.Rollback()
+	if err != nil {
+		return err
+	}
+
+	// DBをTRUNCATE
+	patientDetailsTableName := "patient_details"
+	_, err = tx.Exec("TRUNCATE " + patientDetailsTableName)
+	if err != nil {
+		return err
+	}
+
+	// DBに保存
+	stmt, err := tx.Prepare("INSERT INTO  patient_details (date, area, value, country) VALUES (?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, pd := range patientDetails {
+		_, err := stmt.Exec(pd.Date, pd.Area, pd.Value, pd.Country)
+		if err != nil {
+			return err
+		}
+	}
+
+	// SQLが正常に実行できたらコミット
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+}

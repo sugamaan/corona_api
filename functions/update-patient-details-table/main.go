@@ -2,6 +2,7 @@ package main
 
 import (
 	"corona-api/src/middleware"
+	"corona-api/src/modules/patient"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -9,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"io"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -45,23 +45,11 @@ type ItemList []struct {
 	Npatients string `json:"npatients"`
 }
 
-type PatientDetail struct {
-	Date    uint32
-	Area    string
-	Value   uint32
-	Country string
-}
-
 func handler(event Event) (Response, error) {
 	// DB接続
 	db, err := middleware.ConnectDb()
 	defer db.Close()
 	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("fail connect db", err)
 		return Response{Status: Failure}, err
 	}
 
@@ -70,7 +58,6 @@ func handler(event Event) (Response, error) {
 		Config: aws.Config{Region: aws.String(os.Getenv("REGION"))},
 	})
 	if err != nil {
-		log.Println(err)
 		return Response{Status: Failure}, err
 	}
 
@@ -81,32 +68,32 @@ func handler(event Event) (Response, error) {
 		Key:    aws.String(event.ObjectKey),
 	})
 	if err != nil {
-		log.Fatal(err)
+		return Response{Status: Failure}, err
 	}
 	file2, err := io.ReadAll(obj.Body)
 	if err != nil {
-		log.Fatal(err)
+		return Response{Status: Failure}, err
 	}
 
 	var patientDetailsResponse PatientDetailsResponse
 	err = json.Unmarshal(file2, &patientDetailsResponse)
 	if err != nil {
-		log.Fatal(err)
+		return Response{Status: Failure}, err
 	}
 
 	// インサート用の構造体へ変換する
-	var PatientDetails []PatientDetail
+	var PatientDetails []patient.Detail
 	for _, item := range patientDetailsResponse.ItemList {
 		result := strings.Replace(item.Date, "-", "", -1)
 		date, err := strconv.Atoi(result)
 		if err != nil {
-			log.Fatal(err)
+			return Response{Status: Failure}, err
 		}
 		npatients, err := strconv.Atoi(item.Npatients)
 		if err != nil {
-			log.Fatal(err)
+			return Response{Status: Failure}, err
 		}
-		pd := PatientDetail{
+		pd := patient.Detail{
 			Date:    uint32(date),
 			Area:    item.NameJp,
 			Value:   uint32(npatients),
@@ -115,40 +102,10 @@ func handler(event Event) (Response, error) {
 		PatientDetails = append(PatientDetails, pd)
 	}
 
-	fmt.Printf("%+v\n", PatientDetails)
-
-	// DBトランザクション開始
-	tx, err := db.Begin()
+	// DBへ保存
+	err = patient.InsertPatientDetails(db, PatientDetails)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	// DBをTRUNCATE
-	patientDetailsTableName := "patient_details"
-	_, err = tx.Exec("TRUNCATE " + patientDetailsTableName)
-	if err != nil {
-		tx.Rollback()
-		log.Fatal("truncate table error:", err)
-	}
-
-	// DBに保存
-	stmt, err := tx.Prepare("INSERT INTO  patient_details (date, area, value, country) VALUES (?,?,?,?)")
-	if err != nil {
-		tx.Rollback()
-		log.Fatal(err)
-	}
-	defer stmt.Close()
-
-	for _, pd := range PatientDetails {
-		_, err := stmt.Exec(pd.Date, pd.Area, pd.Value, pd.Country)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// SQLが正常に実行できたらコミット
-	if err := tx.Commit(); err != nil {
-		log.Fatal(err)
+		return Response{Status: Failure}, err
 	}
 
 	return Response{

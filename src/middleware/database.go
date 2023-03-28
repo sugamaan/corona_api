@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -22,6 +23,14 @@ type Database struct {
 	Port     string `json:"port,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Charset  string `json:"charset,omitempty"`
+}
+
+type txAdmin struct {
+	*sql.DB
+}
+
+type Service struct {
+	tx txAdmin
 }
 
 func ConnectDb() (*sql.DB, error) {
@@ -61,4 +70,16 @@ func ConnectDb() (*sql.DB, error) {
 	db = sqldblogger.OpenDriver(dbConfig, db.Driver(), loggerAdapter)
 
 	return db, nil
+}
+
+func (t *txAdmin) Transaction(ctx context.Context, f func(ctx context.Context) (err error)) error {
+	tx, err := t.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := f(ctx); err != nil {
+		return fmt.Errorf("query faild: %w", err)
+	}
+	return tx.Commit()
 }
